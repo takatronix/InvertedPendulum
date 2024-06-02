@@ -16,8 +16,8 @@
 #define REVERSE false   // Set to true to reverse the rotation direction
 #define USE_SERVO true // Set to true to use a servo
 // Servo channel numbers
-#define SERVO_CH_LEFT 1  // Left servo channel
-#define SERVO_CH_RIGHT 2 // Right servo channel
+#define SERVO_CH_LEFT 0  // Left servo channel
+#define SERVO_CH_RIGHT 1 // Right servo channel
 // Set USE_MOTOR to true if using DC motors
 #define USE_MOTOR false   // Set to true to use a motor
 #define MOTOR_CH_LEFT 1  // Left motor channel
@@ -35,7 +35,7 @@
 // (1) First set KI and KD to 0, increase KP value to achieve balance
 // (2) Next, increase KD value to minimize oscillations
 // (3) Finally, adjust KI value to achieve balance
-#define KP 12 // Proportional gain, increase to speed up response
+#define KP 18 // Proportional gain, increase to speed up response
 #define KI 0.3 // Integral gain, set low
 #define KD 1 // Derivative gain, set appropriately
 

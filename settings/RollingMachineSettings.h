@@ -16,12 +16,12 @@
 #define REVERSE false   // 回転方向を反転する場合はtrueにする
 #define USE_SERVO false // サーボを使う場合はtrueにする
 // サーボのチャンネルNo
-#define SERVO_CH_LEFT 0  // 左サーボのチャンネル
+#define SERVO_CH_LEFT 1  // 左サーボのチャンネル
 #define SERVO_CH_RIGHT 2 // 右サーボのチャンネル
 // DCモーターを使う場合は、USE_MOTORをtrueにする
 #define USE_MOTOR true   // モーターを使う場合はtrueにする
-#define MOTOR_CH_LEFT 0  // 左モーターのチャンネル
-#define MOTOR_CH_RIGHT 1 // 右モーターのチャンネル
+#define MOTOR_CH_LEFT 1  // 左モーターのチャンネル
+#define MOTOR_CH_RIGHT 2 // 右モーターのチャンネル
 
 // 2. 目標角度(重要、基本0でOK)
 // バランスがとれる角度に数値を設定するか、または
@@ -35,7 +35,7 @@
 // (1)まずKI,KDの値を0にして、KPの値を大きくして、バランスをとる
 // (2)次にKDの値を大きくして、振動がないように調整する
 // (3)最後にKIの値を調整して、バランスをとる
-#define KP 10 // 比例ゲイン反応を速くするために増やす
+#define KP 5 // 比例ゲイン反応を速くするために増やす
 #define KI 0 // 積分ゲイン、小さめに設定
 #define KD 0 // 微分ゲイン、適度に設定
 

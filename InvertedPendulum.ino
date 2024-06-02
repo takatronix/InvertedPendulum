@@ -1,36 +1,76 @@
+
+#include <Wire.h>
 #include <M5UI.h>
-#include "AtomicMotion.h"
+
+//#include "MotorDriver.h"
 #include "DualButtonUnit.h"
 #include "OrientationSensor.h"
 #include "PIDController.h"
 
 #include "FileManager.h"
-#include "SettingsManager.h"
+#include "SettingsFile.h"
+
+#include "UnitAngle8.h"
+//#include "UnitSonic.h"
+#include "UnitCardKB.h"
+
 
 FileManager fileManager;
-SettingsManager settingsManager("/config/settings.json");
+SettingsFile settings("/config/settings.json");
 
 // 設定値
-#include "settings/DefaultSettings.h"
+//#include "settings/DefaultSettings.h"
+#include "settings/GreenServoSettings.h"
 // #include "settings/RollingMachineSettings.h"
 
 // 姿勢センサー
 OrientationSensor imu;
 // モーター制御
-AtomicMotion Motion;
+//MotorDriver motor(1);
 // ボタン入力
-DualButtonUnit DualButton;
+//DualButtonUnit DualButton;
 // PID制御
 PIDController pid(KP, KI, KD, SAMPLE_PERIOD);
 
 // offscreen buffer
 M5UICanvas screen(&M5.Display);
 
+UnitAngle8 unitAngle;
+UnitCardKB unitCardKB;
+//UnitSonic sonic;
+
+#define MOTOR_SPEED_MIN -127
+#define MOTOR_SPEED_MAX 127
+//M5_ANGLE8 angle8;
+
+
 void setup()
 {
-    Serial.begin(115200);
-    Serial.println("Start Inverted Pendulum");
-    M5.begin();
+    LOG_I("Start InvertedPendulum");
+    auto cfg = M5.config();
+   // cfg.pmic_button = false;  // これで電源ボタン状態取得を行わなくなる
+    //cfg.internal_imu = false; // これで内蔵IMUを使わなくなる
+   // cfg.internal_rtc = false; // これで内蔵RTCを使わなくなる
+    M5.begin(cfg);
+    //Wire.end();
+    //Wire1.end();
+    //Wire1.end();
+    LOG_D("M5.begin()");
+  //  motor.begin(ATOM_MOTION_I2C_ADDR, ATOM_MOTION_SDA, ATOM_MOTION_SCL);
+ //   motor.begin(0x36, 0, 26);
+   // Wire.begin(0, 26);
+
+/*
+    pinMode(26, OUTPUT);
+    pinMode(0, OUTPUT);
+    M5.In_I2C.release();
+    M5.In_I2C.begin(0x38,0, 26);
+*/
+    auto sda = M5.Ex_I2C.getSDA();
+    auto scl = M5.Ex_I2C.getSCL();
+
+
+    fileManager.begin();
 
     // オフスクリーンバッファの初期化
     screen.enableRotation = false;
@@ -55,11 +95,24 @@ void setup()
         imu.calibrate();
     }
 
-    DualButton.begin();
 
+    //DualButton.begin();
 
+/*
+    settings["KP"] = KP;
+    settings["KI"] = KI;
+    settings["KD"] = KD;
+    settings["SAMPLE_PERIOD"] = SAMPLE_PERIOD;
+    settings["TARGET_ANGLE"] = TARGET_ANGLE;
+    settings["EKF_ENABLE"] = EKF_ENABLE;
+    settings["EKF_Q_ANGLE"] = EKF_Q_ANGLE;
+    settings["EKF_Q_BIAS"] = EKF_Q_BIAS;
+    settings["EKF_R_MEASURE"] = EKF_R_MEASURE;
+
+*/
+/*
     if (!fileManager.begin()) {
-        Serial.println("Failed to initialize SPIFFS");
+        LOG_E("Failed to initialize SPIFFS");
         return;  // SPIFFSの初期化に失敗した場合、処理を中断
     }
 
@@ -106,30 +159,6 @@ void setup()
         Serial.println("File does not exist after deleting.");
     }
 
-    // CSVファイルの書き込み
-    std::vector<std::vector<String>> csvData = {
-        {"Name", "Age", "City"},
-        {"Alice", "30", "New York"},
-        {"Bob", "25", "Los Angeles"},
-        {"Charlie", "35", "Chicago"}
-    };
-    if (fileManager.writeCSV("/data.csv", csvData)) {
-        Serial.println("CSV file written successfully");
-    } else {
-        Serial.println("Failed to write CSV file");
-    }
-
-    // CSVファイルの読み込み
-    std::vector<std::vector<String>> readData = fileManager.readCSV("/data.csv");
-    Serial.println("CSV file contents:");
-    for (const auto& row : readData) {
-        for (const auto& cell : row) {
-            Serial.print(cell);
-            Serial.print(" ");
-        }
-        Serial.println();
-    }
-
 
     // ファイルリストの一覧を表示
     Serial.println("Listing files...");
@@ -138,6 +167,24 @@ void setup()
     // SPIFFSの残り容量を表示
     Serial.println("Printing SPIFFS info...");
     fileManager.printSPIFFSInfo();
+    */
+   LOG_I("End InvertedPendulum");
+   
+/*
+   Wire.end();
+   // SDA,SCLを表示
+    LOG_D("SDA:%d SCL:%d", M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL());
+    LOG_D("SDA:%d SCL:%d", sda, scl);
+    while (!unitAngle.begin(sda,scl,ANGLE8_I2C_ADDR)) {
+        LOG_E("UnitAngle8 not found");
+        delay(100);
+    }
+*/
+   // unitAngle.begin();
+    //sonic.begin();
+    unitAngle.begin();
+    unitCardKB.begin();
+    Serial.println("angle8 Connect Success");
 }
 
 void loop()
@@ -154,7 +201,7 @@ void loop()
 
     // PID制御を行い、モーターの出力を計算
     float output = pid.compute(currentAngle);
-
+   
     // 転倒時、裏返した時はモーターを停止させる
     if (TUMBLE_DETECT)
     {
@@ -168,20 +215,24 @@ void loop()
         }
     }
 
-    // モーターの出力を設定
-    setMotorSpeed(output);
+
+ //   int key = unitCardKB.getKey();
+    unitAngle.update();
 
     // 画面表示
     screen.clear();
     screen.setCursor(0, 0);
-    screen.printf("Angle %.2f\n", currentAngle);
+  //  screen.printf("Distance:%.2f\n", d);
+   // screen.printf("key:%d\n", key);
+    screen.printf("FPS:%d Draw:%dms\n", screen.getFPS(), screen.getDrawingTime());
+
     screen.printf("Pitch %.2f\n", imu.getPitch(EKF_ENABLE));
     screen.printf("Roll  %.2f\n", imu.getRoll(EKF_ENABLE));
     screen.printf("Poffset %.2f\n", imu.getPitchOffset());
     screen.printf("Roffset %.2f\n", imu.getRollOffset());
-    screen.printf("OUT:%d\n", (int)output);
-    screen.printf("FPS:%d Draw:%dms\n", screen.getFPS(), screen.getDrawingTime());
-
+//    screen.printf("OUT:%d FPS:%d Draw:%dms\n", (int)output,);
+    //screen.printf("EX SDA:%2d SCL:%2d\n", M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL());
+  //  screen.printf("IN SDA:%2d SCL:%2d\n", M5.In_I2C.getSDA(), M5.In_I2C.getSCL());
     if (M5.BtnA.wasPressed())
     {
         screen.fillScreen(RED);
@@ -191,15 +242,19 @@ void loop()
     {
         screen.fillScreen(BLUE);
         screen.update();
-        Motion.stopAllMotors();
+        //motor.stopAllMotors();
         imu.calibrate();
         return;
     }
-
     screen.update();
-    delay(SAMPLE_PERIOD * 1000 - screen.getDrawingTime());
-}
 
+ //   LOG_D("Angle:%.2f Pitch:%.2f Roll:%.2f Poffset:%.2f Roffset:%.2f OUT:%d", currentAngle, imu.getPitch(EKF_ENABLE), imu.getRoll(EKF_ENABLE), imu.getPitchOffset(), imu.getRollOffset(), (int)output);
+    delay(SAMPLE_PERIOD * 1000 );
+
+
+    //LOG_D("FPS:%d Draw:%dms", screen.getFPS(), screen.getDrawingTime());
+}
+/*
 void setMotorSpeed(int speed)
 {
     if (REVERSE)
@@ -208,12 +263,14 @@ void setMotorSpeed(int speed)
     }
     if (USE_SERVO)
     {
-        Motion.setServoSpeed(SERVO_CH_LEFT, speed);
-        Motion.setServoSpeed(SERVO_CH_RIGHT, -speed);
+        motor.setServoSpeed(SERVO_CH_LEFT, speed);
+        motor.setServoSpeed(SERVO_CH_RIGHT, -speed);
     }
     if (USE_MOTOR)
     {
-        Motion.setMotorSpeed(MOTOR_CH_LEFT, speed);
-        Motion.setMotorSpeed(MOTOR_CH_RIGHT, -speed);
+        motor.setMotorSpeed(MOTOR_CH_LEFT, speed);
+        motor.setMotorSpeed(MOTOR_CH_RIGHT, -speed);
     }
 }
+*/
+
