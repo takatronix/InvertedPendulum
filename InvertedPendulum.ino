@@ -1,19 +1,12 @@
-
-#include <Wire.h>
 #include <M5UI.h>
 
-//#include "MotorDriver.h"
-#include "DualButtonUnit.h"
 #include "OrientationSensor.h"
 #include "PIDController.h"
 
 #include "FileManager.h"
 #include "SettingsFile.h"
 
-#include "UnitAngle8.h"
-//#include "UnitSonic.h"
-#include "UnitCardKB.h"
-
+#include "Unit.h"
 
 FileManager fileManager;
 SettingsFile settings("/config/settings.json");
@@ -26,7 +19,8 @@ SettingsFile settings("/config/settings.json");
 // 姿勢センサー
 OrientationSensor imu;
 // モーター制御
-//MotorDriver motor(1);
+HatCBack motor;
+
 // ボタン入力
 //DualButtonUnit DualButton;
 // PID制御
@@ -68,7 +62,9 @@ void setup()
 */
     auto sda = M5.Ex_I2C.getSDA();
     auto scl = M5.Ex_I2C.getSCL();
+   // motor.begin(0x36, sda, scl);
 
+    motor.begin();
 
     fileManager.begin();
 
@@ -215,7 +211,7 @@ void loop()
         }
     }
 
-
+    setMotorSpeed(output);
  //   int key = unitCardKB.getKey();
     unitAngle.update();
 
@@ -254,7 +250,7 @@ void loop()
 
     //LOG_D("FPS:%d Draw:%dms", screen.getFPS(), screen.getDrawingTime());
 }
-/*
+
 void setMotorSpeed(int speed)
 {
     if (REVERSE)
@@ -272,5 +268,5 @@ void setMotorSpeed(int speed)
         motor.setMotorSpeed(MOTOR_CH_RIGHT, -speed);
     }
 }
-*/
+
 

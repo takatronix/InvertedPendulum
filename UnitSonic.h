@@ -1,16 +1,16 @@
 #pragma once
-#include "I2CGrove.h"
+#include "I2CWire.h"
 
 #define ULTRASONIC_I2C_ADDR 0x57
 
-class UnitSonic : public I2CGrove
+class UnitSonic : public I2CWire
 {
 public:
     float distance = 0;
     bool begin(uint8_t addr = ULTRASONIC_I2C_ADDR)
     {
         // 400000ではエラーが発生する
-        return I2CGrove::begin(addr);
+        return I2CWire::begin(addr);
     }
     float getDistance()
     {

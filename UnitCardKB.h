@@ -1,15 +1,15 @@
 #pragma once
-#include "I2CGrove.h"
+#include "I2CWire.h"
 #include <BleKeyboard.h>
 
 #define CARDKB_ADDR 0x5F
 
-class UnitCardKB : public I2CGrove
+class UnitCardKB : public I2CWire
 {
 public:
     bool begin(uint8_t addr = CARDKB_ADDR)
     {
-        return I2CGrove::begin(addr);
+        return I2CWire::begin(addr);
     }
 
     // キー状態を読みだす。取得できなければ-1を返す

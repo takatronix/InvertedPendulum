@@ -1,5 +1,5 @@
 #pragma once
-#include "I2CGrove.h"
+#include "I2CWire.h"
 
 #define ANGLE8_I2C_ADDR 0x43
 #define ANGLE8_ANALOG_INPUT_12B_REG 0x00
@@ -13,7 +13,7 @@
 #define ANGLE8_TOTAL_LED 9
 #define ANGLE8_TOTAL_ADC 8
 
-class UnitAngle8 : public I2CGrove
+class UnitAngle8 : public I2CWire
 {
 public:
     float level[ANGLE8_TOTAL_ADC];
@@ -21,7 +21,7 @@ public:
 
     bool begin(uint8_t addr = ANGLE8_I2C_ADDR)
     {
-        bool ret = I2CGrove::begin(addr);
+        bool ret = I2CWire::begin(addr);
         init();
         return ret;
     }

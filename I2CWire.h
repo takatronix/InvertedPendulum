@@ -2,11 +2,26 @@
 #include <Wire.h>
 
 #define I2CGROVE_DEFAULT_FREQUENCY 400000
-class I2CGrove
+class I2CWire
 {
 public:
     uint8_t _addr;
     TwoWire *_wire;
+
+    bool begin(TwoWire& wire, uint16_t addr,int sda=-1,int scl=-1)
+    {
+        _wire = &wire;
+        _addr = addr;
+        _wire->begin(sda,scl);
+        delay(10);
+        _wire->beginTransmission(_addr);
+        uint8_t error = _wire->endTransmission();
+
+        if (error == 0) {
+            return true;
+        } 
+        return false; 
+    }
 
     bool begin(uint16_t addr)
     {
@@ -54,6 +69,14 @@ public:
         uint8_t data[2];
         readBytes(reg, data, 2);
         return (data[1] << 8) | data[0];
+    }
+    
+    void writeWord(uint8_t reg, uint16_t data)
+    {
+        uint8_t buf[2];
+        buf[0] = data & 0xff;
+        buf[1] = (data >> 8) & 0xff;
+        writeBytes(reg, buf, 2);
     }
 
     int writeBytes(uint8_t reg, uint8_t *data, uint8_t length)

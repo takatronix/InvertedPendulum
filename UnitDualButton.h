@@ -1,9 +1,9 @@
 #pragma once
 
-class DualButtonUnit
+class UnitDualButton
 {
 public:
-    DualButtonUnit()
+    UnitDualButton()
     {
         begin();
     }

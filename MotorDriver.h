@@ -1,5 +1,5 @@
 #pragma once
-#include "I2C.h"
+#include "I2CWire.h"
 
 #define SERVO_PULSE_MIN 500
 #define SERVO_PULSE_CENTER 1500
@@ -54,19 +54,16 @@
 #define DEFAULT_SCL 26
 
 using namespace m5;
-class MotorDriver : public TwoWireI2C
+class MotorDriver : public I2CWire
 {
 public:
-    uint8_t i2c_addr = 0x38;
-    MotorDriver(int no) : I2C(no) {
-        LOG_D("MotorDriver (%d)", no);
-        // 親クラスのコンストラクタでI2Cの初期化を行う        
-    }
 
-    int begin(uint8_t adr = 0x38, int sda = 0,int scl=26){
-        I2C::begin(adr,sda, scl);
-        LOG_D("MotorDriver begin: adr=%d, sda=%d, scl=%d", adr, sda, scl);
-        this->i2c_addr = adr;
+    bool begin(TwoWire& wire, uint16_t addr, int sda = -1, int scl = -1)
+    {
+        if (I2CWire::begin(wire, addr, sda, scl))
+        {
+            return 1;
+        }
         return 0;
     }
 
@@ -75,7 +72,7 @@ public:
     {
         ch--;
         uint8_t adr = ch + 0x20;
-        writeByte(i2c_addr, adr, (uint8_t)speed);
+        writeByte(adr, (uint8_t)speed);
         return 0;
     }
 
@@ -95,7 +92,7 @@ public:
     uint8_t setServoAngle(uint8_t ch, uint8_t angle)
     {
         uint8_t reg = ch - 1;
-        writeByte(i2c_addr, reg, angle);
+        writeByte(reg, angle);
         return 0;
     }
 
@@ -105,7 +102,7 @@ public:
         uint8_t reg = 2 * ch + 16;
         if (reg % 2 == 1 || reg > 32)
             return 1;
-        writeWord(i2c_addr, reg, width);
+        writeWord(reg, width);
         return 0;
     }
 
@@ -113,13 +110,31 @@ public:
     {
         uint8_t reg = ch - 1;
         uint8_t data = 0;
-        return readByte(i2c_addr, reg);
+        return readByte(reg);
     }
 
     uint16_t getServoPulse(uint8_t ch)
     {
         ch--;
         uint8_t reg = 2 * ch | 0x10;
-        return readWord(i2c_addr, reg);
+        return readWord(reg);
+    }
+};
+
+class AtomMotion : public MotorDriver
+{
+public:
+    bool begin()
+    {
+        return MotorDriver::begin(Wire, ATOM_MOTION_I2C_ADDR, ATOM_MOTION_SDA, ATOM_MOTION_SCL);
+    }
+};
+
+class HatCBack : public MotorDriver
+{
+public:
+    bool begin()
+    {
+        return MotorDriver::begin(Wire, HAT_C_BACK_I2C_ADDR, HAT_C_BACK_SDA, HAT_C_BACK_SCL);
     }
 };
