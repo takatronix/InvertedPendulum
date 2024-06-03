@@ -6,7 +6,6 @@
 #include "FileManager.h"
 #include "SettingsFile.h"
 
-#include "Unit.h"
 
 FileManager fileManager;
 SettingsFile settings("/config/settings.json");
@@ -20,6 +19,7 @@ SettingsFile settings("/config/settings.json");
 OrientationSensor imu;
 // モーター制御
 HatCBack motor;
+//Hat8Servos_v1_1 motor;
 
 // ボタン入力
 //DualButtonUnit DualButton;
@@ -29,14 +29,15 @@ PIDController pid(KP, KI, KD, SAMPLE_PERIOD);
 // offscreen buffer
 M5UICanvas screen(&M5.Display);
 
-UnitAngle8 unitAngle;
-UnitCardKB unitCardKB;
+//UnitAngle8  unitAngle;
+//UnitCardKB  unitCardKB;
+//UnitMiniScales unitScale;
 //UnitSonic sonic;
 
 #define MOTOR_SPEED_MIN -127
 #define MOTOR_SPEED_MAX 127
 //M5_ANGLE8 angle8;
-
+//UnitMiniJoyC joyC;
 
 void setup()
 {
@@ -178,9 +179,14 @@ void setup()
 */
    // unitAngle.begin();
     //sonic.begin();
-    unitAngle.begin();
-    unitCardKB.begin();
+   // unitAngle.begin();
+    //unitCardKB.begin();
     Serial.println("angle8 Connect Success");
+
+    //unitScale.begin();
+
+    //joyC.begin();
+   // unitAngle.begin();
 }
 
 void loop()
@@ -210,14 +216,41 @@ void loop()
             output = 0;
         }
     }
+    
+    /*
+        unitAngle.update();
+        // unitAngleの値をサーボモーターに出力
 
-    setMotorSpeed(output);
+    uint8_t input = unitAngle.input[0];
+    int angle = map(input, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
+    motor.setServoPulse(0, angle);
+
+
+    uint8_t input2 = unitAngle.input[1];
+    int angle2 = map(input2, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
+    motor.setServoPulse(1, angle2);
+
+    uint8_t input3 = unitAngle.input[2];
+    int angle3 = map(input3, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
+    motor.setServoPulse(2, angle3);
+
+    uint8_t input4 = unitAngle.input[3];
+    int angle4 = map(input4, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
+    motor.setServoPulse(3, angle4);
+
+*/
+    // joyCから値を取得
+ //   joyC.update();
+    //unitAngle.update();
+
+  // setMotorSpeed(output);
  //   int key = unitCardKB.getKey();
-    unitAngle.update();
-
+    //float weight = unitScale.getWeight();
+   // unitScale.setLEDColor(0xff,0xff,0xff);
     // 画面表示
     screen.clear();
     screen.setCursor(0, 0);
+   // screen.printf("Weight:%.2f\n", weight);
   //  screen.printf("Distance:%.2f\n", d);
    // screen.printf("key:%d\n", key);
     screen.printf("FPS:%d Draw:%dms\n", screen.getFPS(), screen.getDrawingTime());
@@ -246,7 +279,7 @@ void loop()
 
  //   LOG_D("Angle:%.2f Pitch:%.2f Roll:%.2f Poffset:%.2f Roffset:%.2f OUT:%d", currentAngle, imu.getPitch(EKF_ENABLE), imu.getRoll(EKF_ENABLE), imu.getPitchOffset(), imu.getRollOffset(), (int)output);
     delay(SAMPLE_PERIOD * 1000 );
-
+    //unitScale.update();
 
     //LOG_D("FPS:%d Draw:%dms", screen.getFPS(), screen.getDrawingTime());
 }
