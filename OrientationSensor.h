@@ -1,7 +1,7 @@
 #pragma once
 #include <M5Unified.h>
 #include <math.h>
-
+#include "SettingsFile.h"
 // EKF(拡張カルマンフィルタ)クラス
 class EKF
 {
@@ -123,13 +123,39 @@ public:
         setNoiseParameters(this->_q_angle, this->_q_bias, this->_r_measure);
         LOG_D("Calibrated: Pitch:%.2f Roll:%.2f GyroX:%.2f GyroY:%.2f GyroZ:%.2f\n", pitchOffset, rollOffset, gyroXOffset, gyroYOffset, gyroZOffset);
     }
+    // キャリブレーション情報を保存
+    void save(SettingsFile& settings)
+    {
+        /*
+        settings["pitchOffset"].set(pitchOffset);
+        settings["rollOffset"].set(rollOffset);
+        settings["gyroXOffset"].set(gyroXOffset);
+        settings["gyroYOffset"].set(gyroYOffset);
+        settings["gyroZOffset"].set(gyroZOffset);
+        settings.save();
+        LOG_D("Saved: Pitch:%.2f Roll:%.2f GyroX:%.2f GyroY:%.2f GyroZ:%.2f\n", pitchOffset, rollOffset, gyroXOffset, gyroYOffset, gyroZOffset);
+        */
+    }
+
+    // キャリブレーション情報を読み込み
+    void load(SettingsFile& settings)
+    {
+        /*
+        pitchOffset = settings["pitchOffset"] | 0.0f;
+        rollOffset = settings["rollOffset"] | 0.0f;
+        gyroXOffset = settings["gyroXOffset"] | 0.0f;
+        gyroYOffset = settings["gyroYOffset"] | 0.0f;
+        gyroZOffset = settings["gyroZOffset"] | 0.0f;
+        LOG_D("Loaded: Pitch:%.2f Roll:%.2f GyroX:%.2f GyroY:%.2f GyroZ:%.2f\n", pitchOffset, rollOffset, gyroXOffset, gyroYOffset, gyroZOffset);
+        */
+    }
 
     void update()
     {
         // Imuセンサーからデータを読み取る
         M5.Imu.getAccelData(&accX, &accY, &accZ);
         M5.Imu.getGyroData(&gyroX, &gyroY, &gyroZ);
-
+       // LOG_D("Accel: %.2f %.2f %.2f Gyro: %.2f %.2f %.2f\n", accX, accY, accZ, gyroX, gyroY, gyroZ);
         // ジャイロのオフセットを補正
         gyroX -= gyroXOffset;
         gyroY -= gyroYOffset;
@@ -190,6 +216,18 @@ public:
     float getYawOffset() const
     {
         return yawOffset;
+    }
+    float getGyroXOffset() const
+    {
+        return gyroXOffset;
+    }
+    float getGyroYOffset() const
+    {
+        return gyroYOffset;
+    }
+    float getGyroZOffset() const
+    {
+        return gyroZOffset;
     }
     void getCalibratedAcceleration(float &x, float &y, float &z) const
     {

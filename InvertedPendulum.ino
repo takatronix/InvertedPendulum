@@ -1,84 +1,62 @@
 #include <M5UI.h>
-
 #include "OrientationSensor.h"
 #include "PIDController.h"
 
 #include "FileManager.h"
 #include "SettingsFile.h"
 
-
-FileManager fileManager;
-SettingsFile settings("/config/settings.json");
-
 // 設定値
 //#include "settings/DefaultSettings.h"
 #include "settings/GreenServoSettings.h"
-// #include "settings/RollingMachineSettings.h"
+//#include "settings/RedMotorSettings.h"
+//#include "settings/RollingMachineSettings.h"
+
 
 // 姿勢センサー
 OrientationSensor imu;
-// モーター制御
-HatCBack motor;
-//Hat8Servos_v1_1 motor;
-
-// ボタン入力
-//DualButtonUnit DualButton;
 // PID制御
 PIDController pid(KP, KI, KD, SAMPLE_PERIOD);
+// モーター
+MotorDriver motor;
+
+// 設定ファイル
+SettingsFile settings("/config/settings.json");
 
 // offscreen buffer
 M5UICanvas screen(&M5.Display);
+// バッテリー残量表示
+BatterySprite battery(&screen);
+// 距離センサー
+UnitToF tof;
 
-//UnitAngle8  unitAngle;
-//UnitCardKB  unitCardKB;
-//UnitMiniScales unitScale;
-//UnitSonic sonic;
+// 停止中か？
+bool isStopped = false;
 
-#define MOTOR_SPEED_MIN -127
-#define MOTOR_SPEED_MAX 127
-//M5_ANGLE8 angle8;
-//UnitMiniJoyC joyC;
-
+//　背景色
+uint16_t backgroundColor = TFT_BLACK;
+//FileManager fileManager;
+// 
 void setup()
 {
     LOG_I("Start InvertedPendulum");
     auto cfg = M5.config();
-   // cfg.pmic_button = false;  // これで電源ボタン状態取得を行わなくなる
-    //cfg.internal_imu = false; // これで内蔵IMUを使わなくなる
-   // cfg.internal_rtc = false; // これで内蔵RTCを使わなくなる
     M5.begin(cfg);
-    //Wire.end();
-    //Wire1.end();
-    //Wire1.end();
-    LOG_D("M5.begin()");
-  //  motor.begin(ATOM_MOTION_I2C_ADDR, ATOM_MOTION_SDA, ATOM_MOTION_SCL);
- //   motor.begin(0x36, 0, 26);
-   // Wire.begin(0, 26);
 
-/*
-    pinMode(26, OUTPUT);
-    pinMode(0, OUTPUT);
-    M5.In_I2C.release();
-    M5.In_I2C.begin(0x38,0, 26);
-*/
-    auto sda = M5.Ex_I2C.getSDA();
-    auto scl = M5.Ex_I2C.getSCL();
-   // motor.begin(0x36, sda, scl);
+    // 設定ファイルの初期化 
+    settings.begin();
+    //fileManager.begin();
+    //settings.load();
+    // モーターの初期化
+    motor.begin(MOTOR_I2C_WIRE, MOTOR_I2C_ADDR, MOTOR_I2C_SDA, MOTOR_I2C_SCL);
 
-    motor.begin();
-
-    fileManager.begin();
+    // startup sound
+    Sound::playNote(Note::E5,100);
+    Sound::playNote(Note::A3,100);
 
     // オフスクリーンバッファの初期化
     screen.enableRotation = false;
-
     screen.setup();
     screen.removeAllRenderers();
-    screen.setCursor(0, 0);
-    screen.setTextSize(1);
-    screen.setTextColor(GREEN);
-
-    screen.setRotation(2);
 
     // PID制御の初期化
     pid.setOutputLimits(MOTOR_SPEED_MIN, MOTOR_SPEED_MAX);
@@ -90,114 +68,27 @@ void setup()
     if (CALIBRATE_ON_SETUP)
     {
         imu.calibrate();
+      // imu.load(settings);
     }
+       imu.calibrate();
+ 
+    tof.begin();
 
-
-    //DualButton.begin();
-
-/*
-    settings["KP"] = KP;
-    settings["KI"] = KI;
-    settings["KD"] = KD;
-    settings["SAMPLE_PERIOD"] = SAMPLE_PERIOD;
-    settings["TARGET_ANGLE"] = TARGET_ANGLE;
-    settings["EKF_ENABLE"] = EKF_ENABLE;
-    settings["EKF_Q_ANGLE"] = EKF_Q_ANGLE;
-    settings["EKF_Q_BIAS"] = EKF_Q_BIAS;
-    settings["EKF_R_MEASURE"] = EKF_R_MEASURE;
-
-*/
-/*
-    if (!fileManager.begin()) {
-        LOG_E("Failed to initialize SPIFFS");
-        return;  // SPIFFSの初期化に失敗した場合、処理を中断
-    }
-
-    // 設定値を保存
-    Serial.println("Saving settings...");
-    StaticJsonDocument<200> saveDoc;
-    saveDoc["wifi_ssid"] = "your_ssid";
-    saveDoc["wifi_password"] = "your_password";
-    settingsManager.saveSettings(saveDoc.as<JsonObject>());
-
-    // ファイルが存在するか確認
-    if (fileManager.fileExists("/config.json")) {
-        Serial.println("File exists after saving.");
-    } else {
-        Serial.println("File does not exist after saving.");
-    }
-
-    // 保存されたファイルの内容を表示
-    settingsManager.printFileContent();
-
-    // 設定値を読み込み
-    Serial.println("Loading settings...");
-    StaticJsonDocument<200> loadDoc;
-    if (settingsManager.loadSettings(loadDoc)) {
-        const char* ssid = loadDoc["wifi_ssid"];
-        const char* password = loadDoc["wifi_password"];
-        Serial.printf("SSID: %s, Password: %s\n", ssid, password);
-    } else {
-        Serial.println("Failed to load settings or settings are empty");
-    }
-
-    // 設定値を削除
-    Serial.println("Deleting settings...");
-    if (settingsManager.deleteSettings()) {
-        Serial.println("Settings deleted successfully");
-    } else {
-        Serial.println("Failed to delete settings");
-    }
-
-    // ファイルが存在するか確認
-    if (fileManager.fileExists("/config.json")) {
-        Serial.println("File still exists after deleting.");
-    } else {
-        Serial.println("File does not exist after deleting.");
-    }
-
-
-    // ファイルリストの一覧を表示
-    Serial.println("Listing files...");
-    fileManager.listFiles("/");
-
-    // SPIFFSの残り容量を表示
-    Serial.println("Printing SPIFFS info...");
-    fileManager.printSPIFFSInfo();
-    */
-   LOG_I("End InvertedPendulum");
-   
-/*
-   Wire.end();
-   // SDA,SCLを表示
-    LOG_D("SDA:%d SCL:%d", M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL());
-    LOG_D("SDA:%d SCL:%d", sda, scl);
-    while (!unitAngle.begin(sda,scl,ANGLE8_I2C_ADDR)) {
-        LOG_E("UnitAngle8 not found");
-        delay(100);
-    }
-*/
-   // unitAngle.begin();
-    //sonic.begin();
-   // unitAngle.begin();
-    //unitCardKB.begin();
-    Serial.println("angle8 Connect Success");
-
-    //unitScale.begin();
-
-    //joyC.begin();
-   // unitAngle.begin();
+    LOG_I("Setup done");
 }
 
 void loop()
 {
+   
     M5.update();
     screen.start();
-    imu.update();
+    tof.update();
 
-    // 現在の角度(Pitch)を取得
+    // 現在の傾き(Pitch/Roll)を取得
+    imu.update();
     float pitch = imu.getPitch(EKF_ENABLE);
     float roll = imu.getRoll(EKF_ENABLE);
+
     // 軸にAtomを交差させた場合はRollを使用
     float currentAngle = ANGLE_USE_ROLL ? roll : pitch;
 
@@ -216,73 +107,71 @@ void loop()
             output = 0;
         }
     }
-    
-    /*
-        unitAngle.update();
-        // unitAngleの値をサーボモーターに出力
-
-    uint8_t input = unitAngle.input[0];
-    int angle = map(input, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
-    motor.setServoPulse(0, angle);
 
 
-    uint8_t input2 = unitAngle.input[1];
-    int angle2 = map(input2, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
-    motor.setServoPulse(1, angle2);
-
-    uint8_t input3 = unitAngle.input[2];
-    int angle3 = map(input3, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
-    motor.setServoPulse(2, angle3);
-
-    uint8_t input4 = unitAngle.input[3];
-    int angle4 = map(input4, 0, 255,SERVO_PULSE_MIN,SERVO_PULSE_MAX);
-    motor.setServoPulse(3, angle4);
-
-*/
-    // joyCから値を取得
- //   joyC.update();
-    //unitAngle.update();
-
-  // setMotorSpeed(output);
- //   int key = unitCardKB.getKey();
-    //float weight = unitScale.getWeight();
-   // unitScale.setLEDColor(0xff,0xff,0xff);
-    // 画面表示
-    screen.clear();
-    screen.setCursor(0, 0);
-   // screen.printf("Weight:%.2f\n", weight);
-  //  screen.printf("Distance:%.2f\n", d);
-   // screen.printf("key:%d\n", key);
-    screen.printf("FPS:%d Draw:%dms\n", screen.getFPS(), screen.getDrawingTime());
-
-    screen.printf("Pitch %.2f\n", imu.getPitch(EKF_ENABLE));
-    screen.printf("Roll  %.2f\n", imu.getRoll(EKF_ENABLE));
-    screen.printf("Poffset %.2f\n", imu.getPitchOffset());
-    screen.printf("Roffset %.2f\n", imu.getRollOffset());
-//    screen.printf("OUT:%d FPS:%d Draw:%dms\n", (int)output,);
-    //screen.printf("EX SDA:%2d SCL:%2d\n", M5.Ex_I2C.getSDA(), M5.Ex_I2C.getSCL());
-  //  screen.printf("IN SDA:%2d SCL:%2d\n", M5.In_I2C.getSDA(), M5.In_I2C.getSCL());
     if (M5.BtnA.wasPressed())
     {
-        screen.fillScreen(RED);
+        if(isStopped){
+            isStopped = false;
+        }
+        else{
+            Stop();
+        }
     }
 
     if (M5.BtnA.wasHold())
     {
         screen.fillScreen(BLUE);
         screen.update();
-        //motor.stopAllMotors();
+        Sound::beep();
+        stopMotors();
+        delay(3000);
+
+        screen.fillScreen(RED);
+        screen.update();
+
         imu.calibrate();
+        imu.save(settings);
+    
+        Sound::playNote(Note::C4,100);
+        Sound::playNote(Note::E4,100);
+
+        screen.fillScreen(RED);
+        screen.update();
         return;
     }
+
+    if(isStopped){
+        output = 0;
+        setColor(0, 80, 0);
+    }else{
+        setColor(abs(output) + 80, 0, 0);
+    }
+    // モーターの出力を設定
+    setMotorSpeed(output);
+
+
+    // 画面表示
+    screen.fillScreen(backgroundColor);
+    screen.setCursor(0, 0);
+    screen.printf("FPS:%d Draw:%dms\n", screen.getFPS(), screen.getDrawingTime());
+    screen.printf("Distance:%d\n", tof.distance);
+    screen.printf("Pitch %.2f\n", pitch);
+    screen.printf("Roll  %.2f\n", roll);
+    screen.printf("Poffset %.2f\n", imu.getPitchOffset());
+    screen.printf("Roffset %.2f\n", imu.getRollOffset());
+
+    //tof.update();
     screen.update();
 
- //   LOG_D("Angle:%.2f Pitch:%.2f Roll:%.2f Poffset:%.2f Roffset:%.2f OUT:%d", currentAngle, imu.getPitch(EKF_ENABLE), imu.getRoll(EKF_ENABLE), imu.getPitchOffset(), imu.getRollOffset(), (int)output);
     delay(SAMPLE_PERIOD * 1000 );
-    //unitScale.update();
-
-    //LOG_D("FPS:%d Draw:%dms", screen.getFPS(), screen.getDrawingTime());
 }
+
+void setColor(int r, int g, int b)
+{
+    backgroundColor = M5.Lcd.color565(r, g, b);
+}
+
 
 void setMotorSpeed(int speed)
 {
@@ -302,4 +191,22 @@ void setMotorSpeed(int speed)
     }
 }
 
+void stopMotors(){
+    if (USE_SERVO)
+    {
+        motor.setServoSpeed(SERVO_CH_LEFT, 0);
+        motor.setServoSpeed(SERVO_CH_RIGHT, 0);
+    }
+    if (USE_MOTOR)
+    {
+        motor.setMotorSpeed(MOTOR_CH_LEFT, 0);
+        motor.setMotorSpeed(MOTOR_CH_RIGHT, 0);
+    }
+}
+
+void Stop()
+{
+    isStopped = true;
+    stopMotors();
+}
 

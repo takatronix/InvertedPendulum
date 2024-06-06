@@ -8,6 +8,7 @@ public:
     }
 
     bool begin() {
+        LOG_I("Mounting SPIFFS...");
         if (!SPIFFS.begin(true)) {
             LOG_E("An error has occurred while mounting SPIFFS. Trying to format...");
             if (!SPIFFS.format()) {

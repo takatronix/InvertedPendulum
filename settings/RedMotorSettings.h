@@ -3,10 +3,10 @@
 //////////////////////////////////////////////
 //    Configuration Settings
 //////////////////////////////////////////////
-#define MOTOR_I2C_WIRE Wire
-#define MOTOR_I2C_ADDR 0x38
-#define MOTOR_I2C_SDA 25
-#define MOTOR_I2C_SCL 21
+#define MOTOR_I2C_WIRE Wire1
+#define MOTOR_I2C_ADDR HAT_C_BACK_I2C_ADDR
+#define MOTOR_I2C_SDA HAT_C_BACK_SDA
+#define MOTOR_I2C_SCL HAT_C_BACK_SCL
 
 #define ANGLE_USE_ROLL false // Set to true if Atom intersects with the axis
 #define TUMBLE_DETECT true  // Set to true to enable tumble detection
@@ -19,12 +19,12 @@
 // 1. Motor and Servo Settings
 // Set USE_SERVO to true if using a 360-degree free rotation servo
 #define REVERSE false   // Set to true to reverse the rotation direction
-#define USE_SERVO true // Set to true to use a servo
+#define USE_SERVO false // Set to true to use a servo
 // Servo channel numbers
 #define SERVO_CH_LEFT 0  // Left servo channel
 #define SERVO_CH_RIGHT 1 // Right servo channel
 // Set USE_MOTOR to true if using DC motors
-#define USE_MOTOR false   // Set to true to use a motor
+#define USE_MOTOR true   // Set to true to use a motor
 #define MOTOR_CH_LEFT 0  // Left motor channel
 #define MOTOR_CH_RIGHT 1 // Right motor channel
 
@@ -40,9 +40,9 @@
 // (1) First set KI and KD to 0, increase KP value to achieve balance
 // (2) Next, increase KD value to minimize oscillations
 // (3) Finally, adjust KI value to achieve balance
-#define KP 12 // Proportional gain, increase to speed up response
+#define KP 25 // Proportional gain, increase to speed up response
 #define KI 0.3 // Integral gain, set low
-#define KD 1 // Derivative gain, set appropriately
+#define KD 3 // Derivative gain, set appropriately
 
 #define SAMPLE_PERIOD 0.005 // Sampling period (seconds)
 
@@ -55,10 +55,10 @@
 
 // Process noise covariance matrix angle element
 // Indicates how much uncertainty the system has regarding the angle
-#define EKF_Q_ANGLE 0.02f
+#define EKF_Q_ANGLE 0.01f
 // Process noise covariance matrix bias element
 // Indicates how much uncertainty the system has regarding the bias
-#define EKF_Q_BIAS 0.006f
+#define EKF_Q_BIAS 0.003f
 // Observation noise covariance matrix angle element
 // Indicates how much noise is present in the measurements
 // If the value is 0, it assumes there is no noise (or it is negligible)
